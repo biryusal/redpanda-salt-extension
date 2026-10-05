@@ -23,6 +23,8 @@ def _context(config=None):
         inventory, inventory['nodes'].get(__grains__['id'], {}).get('overrides', {})
     )
     salt = __salt__.value() if hasattr(__salt__, 'value') else __salt__
+    if resolved['storage'].get('resolve'):
+        resolved = core.config.merge(resolved, core.storage.discover(resolved, salt['cmd.run_all']))
     return core.new_context(resolved, inventory, __grains__['id'], dict(__grains__), salt)
 
 

@@ -150,3 +150,31 @@ def test_raid_accepts_components_of_existing_managed_array(rp):
         }
     )
     assert rp.validate_storage_devices()
+
+
+def test_existing_symlink_data_directory_inside_mount_is_supported(rp, tmp_path):
+    mount = tmp_path / 'mount'
+    (mount / 'data').mkdir(parents=True)
+    link = tmp_path / 'data-link'
+    link.symlink_to(mount / 'data', target_is_directory=True)
+    rp.__pillar__['redpanda'].update(
+        data_directory=str(link),
+        storage={'devices': ['/dev/disk/by-id/data'], 'mountpoint': str(mount),
+                 'uuid': '6cde2bd7-8592-413b-940d-289c95784e62', 'format': False},
+    )
+    assert rp.validate()
+
+
+def test_symlink_data_directory_outside_mount_is_rejected(rp, tmp_path):
+    mount = tmp_path / 'mount'
+    mount.mkdir()
+    outside = tmp_path / 'outside'
+    outside.mkdir()
+    (mount / 'data').symlink_to(outside, target_is_directory=True)
+    rp.__pillar__['redpanda'].update(
+        data_directory=str(mount / 'data'),
+        storage={'devices': ['/dev/disk/by-id/data'], 'mountpoint': str(mount),
+                 'uuid': '6cde2bd7-8592-413b-940d-289c95784e62', 'format': False},
+    )
+    with unittest.TestCase().assertRaisesRegex(ValueError, 'inside the managed'):
+        rp.validate()

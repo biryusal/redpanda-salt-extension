@@ -357,8 +357,8 @@ def validate(ctx):
         ):
             raise ValueError('Storage mountpoint must be an absolute non-root path')
         if os.path.commonpath(
-            [os.path.abspath(c['data_directory']), os.path.abspath(mountpoint)]
-        ) != os.path.abspath(mountpoint):
+            [os.path.realpath(c['data_directory']), os.path.realpath(mountpoint)]
+        ) != os.path.realpath(mountpoint):
             raise ValueError(
                 'data_directory must be inside the managed storage mountpoint'
             )

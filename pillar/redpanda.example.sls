@@ -29,6 +29,8 @@ redpanda:
   storage:
     devices: []  # Existing filesystem by default; no automatic NVMe discovery.
     format: false
+    # resolve: true  # Read XFS UUID from the explicit device on the minion.
+    # initialize: true  # Permit XFS initialization of an unused dedicated device.
   restart_node: true
   timeout: 300
   enable_tls: true
