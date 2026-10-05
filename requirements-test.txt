@@ -1,0 +1,9 @@
+pytest>=8,<9
+PyYAML>=6,<7
+Jinja2>=3.1,<4
+salt>=3007,<3009
+looseversion
+packaging
+distro
+msgpack
+pytest-salt-factories>=1.0.5,<2

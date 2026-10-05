@@ -1,0 +1,73 @@
+{
+  "version": "",
+  "install_status": "present",
+  "user": "redpanda",
+  "group": "redpanda",
+  "data_directory": "/var/lib/redpanda/data",
+  "mode": "production",
+  "organization": "redpanda-test",
+  "cluster_id": "redpanda",
+  "base_url": "https://linux.pkg.redpanda.com",
+  "enable_tls": false,
+  "kafka_enable_authorization": false,
+  "allow_insecure_sasl": false,
+  "restart_node": true,
+  "timeout": 300,
+  "rpc_port": 33145,
+  "kafka_port": 9092,
+  "admin_port": 9644,
+  "pandaproxy_port": 8082,
+  "schema_registry_port": 8081,
+  "enable_fips": false,
+  "unstable": false,
+  "development_build": false,
+  "airgap": false,
+  "storage": {
+    "devices": [],
+    "format": false
+  },
+  "tls": {},
+  "sasl": {},
+  "sasl_users": [],
+  "sasl_acls": [],
+  "nodes": {},
+  "node": {},
+  "cluster": {},
+  "host_specific_override": {},
+  "restart_probe": true,
+  "allowed_restart_risks": [],
+  "paths": {
+    "work": "/var/lib/redpanda-salt",
+    "config": "/etc/redpanda/redpanda.yaml",
+    "bootstrap_env": "/etc/redpanda.d/bootstrap-superuser.conf",
+    "systemd_dropin": "/etc/systemd/system/redpanda.service.d/20-salt-bootstrap.conf",
+    "cert_directory": "/etc/redpanda/certs",
+    "config_directory": "/etc/redpanda",
+    "bootstrap_config": "/etc/redpanda/.bootstrap.yaml"
+  },
+  "platforms": {
+    "Debian": {
+      "dependencies": [
+        "debian-keyring",
+        "debian-archive-keyring",
+        "apt-transport-https",
+        "ca-certificates",
+        "gnupg",
+        "iotop",
+        "mdadm",
+        "xfsprogs",
+        "openssl"
+      ]
+    },
+    "RedHat": {
+      "dependencies": [
+        "curl",
+        "yum-utils",
+        "dnf-plugins-core",
+        "openssl",
+        "mdadm",
+        "xfsprogs"
+      ]
+    }
+  }
+}

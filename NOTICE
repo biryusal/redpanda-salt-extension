@@ -1,0 +1,8 @@
+Redpanda Salt broker formula
+
+Configuration defaults and deployment structure are adapted from:
+redpanda-data/redpanda-ansible-collection
+Copyright 2020 Redpanda. Apache License 2.0.
+Upstream revision: 9744e957f5d431744eaa5ff309c71aeda2202e41
+
+Modified for native Salt states, pillar, Admin API operations and orchestration.

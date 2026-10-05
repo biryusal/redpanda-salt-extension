@@ -1,0 +1,3 @@
+{% import_json 'redpanda/defaults.json' as defaults %}
+{% set rp = salt['slsutil.merge'](defaults, pillar.get('redpanda', {}), merge_lists=False) %}
+{% set rp = salt['slsutil.merge'](rp, rp.nodes.get(grains.id, {}).get('overrides', {}), merge_lists=False) %}
