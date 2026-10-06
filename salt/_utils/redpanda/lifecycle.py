@@ -302,7 +302,22 @@ def safety_after_drain(ctx, test=False):
 
     def action(p):
         if _multi(ctx, p):
-            restart_safety(ctx, p['node_id'])
+            last_error = None
+
+            def safe():
+                nonlocal last_error
+                try:
+                    return restart_safety(ctx, p['node_id'])
+                except RuntimeError as exc:
+                    last_error = str(exc)
+                    raise
+
+            try:
+                ctx.wait(safe, 'safe broker restart after drain')
+            except RuntimeError as exc:
+                if last_error:
+                    raise RuntimeError(f'{exc}; last check: {last_error}') from None
+                raise
         return False
 
     return _step(ctx, 'safe_to_update', 'drained', test, action)
