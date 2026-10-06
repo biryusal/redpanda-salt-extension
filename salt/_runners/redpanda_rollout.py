@@ -47,7 +47,7 @@ def _success(value):
 
 
 def deploy(pillar=None, test=False):
-    """Deploy broker core; pillar={'redpanda': {...}}. Returns token and outcome.
+    """Deploy broker core; pillar={'redpanda': {...}}. Returns token and summary.
 
     Any failure retains all reservations: verify pending master/minion jobs,
     then call unlock with the reported token and the original node inventory.
@@ -64,6 +64,27 @@ def users(pillar=None, test=False):
     test=True validates inventory only, as in deploy.
     """
     return _run('redpanda.orch.users', pillar, test)
+
+
+def _failures(outcome):
+    """Keep actionable state errors, without copying every nested return."""
+    failures = []
+    def visit(value, path=()):
+        if isinstance(value, dict):
+            if value.get('result') is False:
+                failures.append({
+                    'path': '/'.join(path),
+                    'state': value.get('__id__', value.get('name', '')),
+                    'comment': value.get('comment', ''),
+                    'jid': value.get('__jid__', ''),
+                })
+            for key, child in value.items():
+                visit(child, path + (str(key),))
+        elif isinstance(value, list):
+            for child in value:
+                visit(child, path)
+    visit(outcome)
+    return failures
 
 
 def _run(sls, pillar, test):
@@ -86,9 +107,12 @@ def _run(sls, pillar, test):
         outcome = __salt__['state.orchestrate'](sls, pillar=data)
         if not _success(outcome):
             __context__['retcode'] = 1
-            return {'result': False, 'token': token, 'reservations': 'retained', 'outcome': outcome}
+            return {'result': False, 'token': token, 'reservations': 'retained',
+                    'comment': 'Rollout failed; inspect failures below',
+                    'failures': _failures(outcome), 'retcode': outcome.get('retcode', 1) if isinstance(outcome, dict) else 1}
         _hosts(nodes, 'redpanda_lock.release', token=token)
-        return {'result': True, 'token': token, 'reservations': 'released', 'outcome': outcome}
+        return {'result': True, 'token': token, 'reservations': 'released',
+                'comment': 'Rollout completed', 'nodes': nodes}
     except Exception as exc:
         __context__['retcode'] = 1
         return {'result': False, 'token': token, 'nodes': nodes,

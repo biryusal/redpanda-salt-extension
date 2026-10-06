@@ -38,7 +38,14 @@ def restart_safety(ctx, node_id):
             (k for (k, value) in risks.items() if value and k not in allowed)
         )
         if blocked:
-            raise RuntimeError('Restart partition risks: ' + ', '.join(blocked))
+            details = {
+                risk: {'count': len(risks[risk]), 'sample': risks[risk][:5]}
+                for risk in blocked
+            }
+            raise RuntimeError(
+                'Restart partition risks: '
+                + json.dumps(details, sort_keys=True)
+            )
     return True
 
 
