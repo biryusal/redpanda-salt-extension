@@ -148,7 +148,26 @@ def test_bootstrap_environment_quotes_systemd_values(rp):
     rp.__pillar__['redpanda'].update(
         sasl={'username': 'admin', 'password': 'p a"ss\\word$'}
     )
-    assert rp.bootstrap_environment() == 'RP_BOOTSTRAP_USER="admin:p a\\"ss\\\\word$"'
+    assert rp.bootstrap_environment() == 'RP_BOOTSTRAP_USER="admin:p a\\"ss\\\\word$:SCRAM-SHA-256"'
+
+
+def test_admin_mechanism_reaches_bootstrap_and_rpk(rp):
+    for mechanism in ('SCRAM-SHA-256', 'SCRAM-SHA-512'):
+        rp.__pillar__['redpanda'].update(
+            kafka_enable_authorization=True,
+            sasl={'username': 'admin', 'password': 'secret', 'mechanism': mechanism},
+        )
+        assert rp.bootstrap_environment() == 'RP_BOOTSTRAP_USER="admin:secret:' + mechanism + '"'
+        assert rp.configuration()['node']['rpk']['sasl']['mechanism'] == mechanism
+
+
+def test_admin_invalid_mechanism_is_rejected(rp):
+    rp.__pillar__['redpanda'].update(
+        kafka_enable_authorization=True,
+        sasl={'username': 'admin', 'password': 'secret', 'mechanism': 'PLAIN'},
+    )
+    with unittest.TestCase().assertRaisesRegex(ValueError, 'SASL mechanism'):
+        rp.configuration()
 
 
 def test_booting_status_is_not_ready(rp):

@@ -68,9 +68,11 @@ def test_security_cannot_mutate_during_pending_deployment(rp):
     rp._run.assert_not_called()
 
 
-def test_acl_create_rechecks_and_is_idempotent(rp):
+@pytest.mark.parametrize('mechanism', ['SCRAM-SHA-256', 'SCRAM-SHA-512'])
+def test_acl_create_rechecks_and_is_idempotent(rp, mechanism):
     acl = rule()
     security(rp, sasl_acls=[acl])
+    rp.__pillar__['redpanda']['sasl']['mechanism'] = mechanism
     rp._run = Mock(
         side_effect=[
             json.dumps({'matches': None}),
@@ -84,6 +86,7 @@ def test_acl_create_rechecks_and_is_idempotent(rp):
     assert command.args[0][:4] == ['rpk', 'security', 'acl', 'create']
     assert '--allow-principal' in command.args[0] and 'User:app' in command.args[0]
     assert 'admin-secret' not in command.args[0]
+    assert 'sasl.mechanism=' + mechanism in command.args[0]
     assert command.kwargs['env'] == {'RPK_USER': 'admin', 'RPK_PASS': 'admin-secret'}
     assert 'admin-secret' not in json.dumps(result)
     rp._run = Mock(return_value=json.dumps({'matches': [row(acl)]}))

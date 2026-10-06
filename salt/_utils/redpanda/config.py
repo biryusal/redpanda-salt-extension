@@ -173,7 +173,7 @@ def build(c, minion_id, inventory_config=None):
         if c.get('schema_registry_enable_authorization'):
             cluster['schema_registry_enable_authorization'] = True
         rpk.update(
-            sasl=dict(mechanism='SCRAM-SHA-256'),
+            sasl=dict(mechanism=sasl.get('mechanism', 'SCRAM-SHA-256')),
         )
     if c['enable_tls'] or c['kafka_enable_authorization']:
         for component in ('schema_registry', 'pandaproxy'):
@@ -317,6 +317,8 @@ def validate(ctx):
         if not node.get('private_ip'):
             raise ValueError('Every node needs private_ip')
     if c['kafka_enable_authorization']:
+        if c['sasl'].get('mechanism', 'SCRAM-SHA-256') not in ('SCRAM-SHA-256', 'SCRAM-SHA-512'):
+            raise ValueError('SASL mechanism must be SCRAM-SHA-256 or SCRAM-SHA-512')
         password = c['sasl'].get('password')
         username = c['sasl'].get('username', 'admin')
         if not isinstance(password, str) or not password:
@@ -408,6 +410,7 @@ def initialized(ctx):
 def bootstrap_environment(ctx):
     c = ctx.config
     value = c['sasl'].get('username', 'admin') + ':' + c['sasl']['password']
+    value += ':' + c['sasl'].get('mechanism', 'SCRAM-SHA-256')
     escaped = value.replace('\\', '\\\\').replace('"', '\\"')
     return 'RP_BOOTSTRAP_USER="' + escaped + '"'
 

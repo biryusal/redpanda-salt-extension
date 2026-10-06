@@ -408,7 +408,7 @@ def acls_managed(ctx, test=False):
         '-X',
         'brokers=' + ','.join(cfg['kafka_api']['brokers']),
         '-X',
-        'sasl.mechanism=SCRAM-SHA-256',
+        'sasl.mechanism=' + c['sasl'].get('mechanism', 'SCRAM-SHA-256'),
         '-X',
         'tls.enabled=' + str(c['enable_tls']).lower(),
     ]
