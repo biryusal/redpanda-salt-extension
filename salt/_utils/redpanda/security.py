@@ -50,7 +50,7 @@ def validate_service_accounts(ctx, c, live=None):
             )
         names.add(name)
         for other in ('schema_registry', 'pandaproxy'):
-            previous = (live or {}).get(other + '_client', {})
+            previous = (live or {}).get(other + '_client') or {}
             if (
                 previous.get('scram_username') == name
                 and previous.get('scram_password') != password
@@ -77,7 +77,7 @@ def validate_users(ctx, c, live=None):
         )
     reserved.update(
         (
-            (live or {}).get(component + '_client', {}).get('scram_username')
+            ((live or {}).get(component + '_client') or {}).get('scram_username')
             for component in ('schema_registry', 'pandaproxy')
         )
     )
@@ -180,7 +180,7 @@ def validate_acls(ctx, c, live=None):
     protected = administrators(c)
     protected.update(
         (
-            (live or {}).get(component + '_client', {}).get('scram_username')
+            ((live or {}).get(component + '_client') or {}).get('scram_username')
             for component in ('schema_registry', 'pandaproxy')
         )
     )
@@ -477,8 +477,8 @@ def service_accounts(ctx, test=False):
         previous = stamp.read_text() if stamp.exists() else None
         configured = any(
             (
-                live.get(other + '_client', {}).get('scram_username') == username
-                and live.get(other + '_client', {}).get('scram_password')
+                (live.get(other + '_client') or {}).get('scram_username') == username
+                and (live.get(other + '_client') or {}).get('scram_password')
                 == account['password']
                 for other in ('schema_registry', 'pandaproxy')
             )

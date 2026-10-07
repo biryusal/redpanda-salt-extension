@@ -68,6 +68,21 @@ def test_security_cannot_mutate_during_pending_deployment(rp):
     rp._run.assert_not_called()
 
 
+@pytest.mark.parametrize('component', ['pandaproxy', 'schema_registry'])
+def test_security_handles_disabled_live_client(rp, component):
+    acl = rule()
+    security(rp, sasl_users=[dict(username='app', password='app-secret')],
+             sasl_acls=[acl])
+    Path(rp.CONFIG_FILE).write_text(json.dumps({component + '_client': None}))
+    rp._api = Mock(side_effect=[[], None])
+    rp._run = Mock(return_value=json.dumps({'matches': [row(acl)]}))
+    assert rp.validate_security() == {'changed': False}
+    assert rp.users_managed()['changes'] == {
+        'users': [{'username': 'app', 'action': 'created'}]
+    }
+    assert not rp.acls_managed()['changed']
+
+
 @pytest.mark.parametrize('mechanism', ['SCRAM-SHA-256', 'SCRAM-SHA-512'])
 def test_acl_create_rechecks_and_is_idempotent(rp, mechanism):
     acl = rule()
@@ -183,7 +198,8 @@ def test_invalid_acl_rejected_before_commands(rp, acl):
 def test_active_service_account_acl_is_protected(rp):
     security(rp, sasl_acls=[rule(username='old-sr', state='absent')])
     Path(rp.CONFIG_FILE).write_text(
-        json.dumps({'schema_registry_client': {'scram_username': 'old-sr'}})
+        json.dumps({'schema_registry_client': {'scram_username': 'old-sr'},
+                    'pandaproxy_client': None})
     )
     with pytest.raises(ValueError, match='service accounts'):
         rp.validate_security()
@@ -232,6 +248,9 @@ import unittest
 
 
 def test_service_accounts_acl_empty_matches_are_created(rp):
+    Path(rp.CONFIG_FILE).write_text(json.dumps({
+        'schema_registry_client': None, 'pandaproxy_client': None,
+    }))
     rp.__pillar__['redpanda'].update(
         kafka_enable_authorization=True,
         sasl_use_explicit_service_accounts=True,
