@@ -211,6 +211,7 @@ def test_cluster_operation_uses_explicit_inventory_for_client_ports(rp):
         return result
 
     rp.core.config.build = record
+    rp.core.config.render.build = record
     assert not rp.cluster_config(config=config)['changed']
     assert seen == [['10.0.0.1:19092', '10.0.0.2:19092']]
     assert rp.settings()['kafka_port'] == 9093

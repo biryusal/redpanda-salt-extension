@@ -2,6 +2,11 @@
 
 Linux/systemd, Salt 3007/3008, Debian/Ubuntu or RedHat family. VMs and Salt are provisioned separately.
 
+Reading the code: start at `salt/redpanda/orch/deploy.sls`, follow
+`salt/redpanda/broker/apply.sls` into each update step, then follow its operation
+into `_states` → `_modules` → `_utils/redpanda/`. See the
+[architecture walkthrough](docs/architecture.md) for file responsibilities.
+
 Serve `salt/` through file_roots or GitFS. Assign the [example pillar](pillar/redpanda.example.sls) to exact minion IDs; include every broker, exact package version and protected SASL/TLS settings.
 
 ```sh

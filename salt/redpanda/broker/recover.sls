@@ -1,6 +1,6 @@
 {% if salt['redpanda.recovery_needed']() %}
 include:
-  - redpanda.redpanda_broker.apply
+  - redpanda.broker.apply
 {% else %}
 redpanda-no-pending-recovery:
   test.nop:

@@ -138,14 +138,14 @@ def test_state_preserves_partial_change_details():
     assert result['changes'] == {'maintenance': 'enabled'}
 
 
-def test_map_renders_without_custom_modules():
+def test_map_uses_resolved_extension_settings(rp):
     import jinja2
     import json
     from salt.utils.jinja import SerializerExtension
-    from salt.utils.dictupdate import merge
     from support import ROOT
     env = jinja2.Environment(loader=jinja2.FileSystemLoader(str(ROOT / 'salt')), extensions=[SerializerExtension], undefined=jinja2.StrictUndefined)
     template = env.from_string("{% from 'redpanda/map.jinja' import rp with context %}{{ rp | tojson }}")
-    result = json.loads(template.render(salt={'slsutil.merge': merge}, pillar={'redpanda': {'version': '25.3.1', 'nodes': {'x': {'overrides': {'admin_port': 1999}}}}}, grains={'id': 'x'}))
+    rp.__pillar__['redpanda']['nodes']['broker-1']['overrides'] = {'admin_port': 1999}
+    result = json.loads(template.render(salt={'redpanda.settings': rp.settings}, pillar=rp.__pillar__, grains=rp.__grains__))
     assert result['admin_port'] == 1999
-    assert result['paths']['config'] == '/etc/redpanda/redpanda.yaml'
+    assert result['paths']['config'] == rp.CONFIG_FILE

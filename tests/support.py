@@ -47,7 +47,8 @@ def broker_module(tmp_path, inject=True):
             if inspect.isfunction(function) and list(
                 inspect.signature(function).parameters
             )[:1] == ['ctx']:
-                dispatch[name] = (area, name)
+                # Patch the implementation module, so sibling calls see the mock.
+                dispatch[name] = (function.__module__, name)
     aliases = {
         '_marker': 'pending_path',
         '_write_marker': 'write_pending',
@@ -93,9 +94,9 @@ def broker_module(tmp_path, inject=True):
             if name in io_names:
                 return getattr(context(), io_names[name])
             if name in dispatch:
-                area, function = dispatch[name]
+                owner, function = dispatch[name]
                 return functools.partial(
-                    getattr(getattr(core, area), function), context()
+                    getattr(sys.modules[owner], function), context()
                 )
             raise AttributeError(name)
 
@@ -103,10 +104,15 @@ def broker_module(tmp_path, inject=True):
             if name in io_names:
                 io_overrides[io_names[name]] = value
             elif name in dispatch and callable(value):
-                area, function = dispatch[name]
+                owner, function = dispatch[name]
+                replacement = lambda ctx, *a, **kw: value(*a, **kw)
                 setattr(
-                    getattr(core, area), function, lambda ctx, *a, **kw: value(*a, **kw)
+                    sys.modules[owner], function, replacement
                 )
+                for area in ('config', 'admin', 'journal', 'lifecycle', 'security', 'cluster', 'storage'):
+                    public = getattr(core, area)
+                    if hasattr(public, function):
+                        setattr(public, function, replacement)
             super().__setattr__(name, value)
 
     module.__class__ = TestAdapter

@@ -1,6 +1,6 @@
 {% if salt['redpanda.bootstrap_needed']() %}
 include:
-  - redpanda.redpanda_broker.apply
+  - redpanda.broker.apply
 {% else %}
 redpanda-existing-broker:
   test.nop:

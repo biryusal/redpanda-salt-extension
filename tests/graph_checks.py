@@ -33,7 +33,7 @@ def check_graph(rp, initialized=False, security=False, orchestration=False):
                 if isinstance(arg, dict):
                     low.update(arg)
             chunks[id] = low
-    load('redpanda.orch.deploy' if orchestration else 'redpanda.redpanda_broker.apply')
+    load('redpanda.orch.deploy' if orchestration else 'redpanda.broker.apply')
     graph = DependencyGraph()
     for chunk in chunks.values():
         graph.add_chunk(chunk, False)

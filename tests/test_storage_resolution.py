@@ -62,7 +62,7 @@ class AttachedStorage(unittest.TestCase):
         spec = importlib.util.spec_from_file_location('extension_module', ROOT / 'salt/_modules/redpanda.py')
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
-        merge_tree = ast.parse((ROOT / 'salt/_utils/redpanda/config.py').read_text())
+        merge_tree = ast.parse((ROOT / 'salt/_utils/redpanda/config/layers.py').read_text())
         merge_tree.body = [node for node in merge_tree.body if isinstance(node, ast.FunctionDef) and node.name == 'merge']
         namespace = {'copy': copy}
         exec(compile(merge_tree, 'config.py', 'exec'), namespace)

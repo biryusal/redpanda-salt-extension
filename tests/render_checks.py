@@ -38,7 +38,8 @@ def test_all_sls_render_and_requisites_resolve(rp, family, initialized, security
                         if kind != 'sls':
                             assert target in states, (name, target)
     package_state = states['redpanda-packages']
-    assert {'onlyif': 'test -f /var/lib/redpanda-salt/pending.json'} in next(iter(package_state.values()))
+    pending = rp.settings()['paths']['work'] + '/pending.json'
+    assert {'onlyif': 'test -f ' + shlex.quote(pending)} in next(iter(package_state.values()))
     if rp.settings()['storage']['devices']:
         for state_id in ('redpanda-raid', 'redpanda-xfs', 'redpanda-storage-uuid'):
             if state_id in states:

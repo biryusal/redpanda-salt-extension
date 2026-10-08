@@ -1,3 +1,5 @@
+# Cluster sequence: prepare → bootstrap → restore → recover → cluster → rolling apply.
+# The runner owns reservations; require edges serialize recovery and existing-node updates.
 {% set rp = pillar.get('redpanda', {}) %}
 {% set nodes = rp.get('nodes', {}) %}
 {% if not nodes %}
@@ -16,7 +18,7 @@ redpanda-prepare:
   salt.state:
     - tgt: {{ nodes.keys() | list | tojson }}
     - tgt_type: list
-    - sls: redpanda.redpanda_broker.prepare
+    - sls: redpanda.broker.prepare
     - pillar: {{ {'redpanda': rp} | tojson }}
     - require:
       - salt: redpanda-sync
@@ -25,7 +27,7 @@ redpanda-bootstrap:
   salt.state:
     - tgt: {{ nodes.keys() | list | tojson }}
     - tgt_type: list
-    - sls: redpanda.redpanda_broker.bootstrap
+    - sls: redpanda.broker.bootstrap
     - pillar: {{ {'redpanda': rp} | tojson }}
     - require:
       - salt: redpanda-prepare
@@ -34,7 +36,7 @@ redpanda-restore-services:
   salt.state:
     - tgt: {{ nodes.keys() | list | tojson }}
     - tgt_type: list
-    - sls: redpanda.redpanda_broker.restore
+    - sls: redpanda.broker.restore
     - pillar: {{ {'redpanda': rp} | tojson }}
     - require:
       - salt: redpanda-bootstrap
@@ -44,7 +46,7 @@ redpanda-recover-{{ loop.index }}:
   salt.state:
     - tgt: {{ [id] | tojson }}
     - tgt_type: list
-    - sls: redpanda.redpanda_broker.recover
+    - sls: redpanda.broker.recover
     - pillar: {{ {'redpanda': rp} | tojson }}
     - require:
       - salt: {{ 'redpanda-restore-services' if loop.first else 'redpanda-recover-' ~ (loop.index - 1) }}
@@ -54,7 +56,7 @@ redpanda-cluster:
   salt.state:
     - tgt: {{ [nodes.keys() | first] | tojson }}
     - tgt_type: list
-    - sls: redpanda.redpanda_broker.cluster
+    - sls: redpanda.broker.cluster
     - pillar: {{ {'redpanda': rp} | tojson }}
     - require:
       - salt: redpanda-recover-{{ nodes | length }}
@@ -64,7 +66,7 @@ redpanda-apply-{{ loop.index }}:
   salt.state:
     - tgt: {{ [id] | tojson }}
     - tgt_type: list
-    - sls: redpanda.redpanda_broker.apply
+    - sls: redpanda.broker.apply
     - pillar: {{ {'redpanda': rp} | tojson }}
     - require:
       - salt: {{ 'redpanda-cluster' if loop.first else 'redpanda-apply-' ~ (loop.index - 1) }}

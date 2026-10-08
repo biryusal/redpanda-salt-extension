@@ -1,6 +1,4 @@
 {% from 'redpanda/map.jinja' import rp with context %}
-include:
-  - redpanda.system_setup
 redpanda-inotify:
   sysctl.present:
     - name: fs.inotify.max_user_instances
