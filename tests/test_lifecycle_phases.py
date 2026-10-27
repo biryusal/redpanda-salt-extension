@@ -266,6 +266,32 @@ def test_systemd_dropin_difference_requires_restart(rp):
     assert rp.plan()['needed']
 
 
+@pytest.mark.parametrize('changed_file,needs_restart', [
+    ('node.crt', False),
+    ('node.key', False),
+    ('truststore.pem', False),
+    ('redpanda.yaml', True),
+    ('systemd.conf', True),
+])
+def test_tls_rotation_does_not_open_restart_transaction(rp, changed_file, needs_restart):
+    rp.__pillar__['redpanda'].update(enable_tls=True, restart_node=False)
+    rp.initialized = lambda: True
+    rp._file_changed = lambda source, dest: source.endswith('/' + changed_file)
+    rp.package_changes = lambda: False
+    rp._api = Mock(side_effect=[
+        [{'internal_rpc_address': '10.0.0.1', 'node_id': 1}],
+        [{'node_id': 1, 'restart': False}],
+    ])
+    rp._run = Mock()
+    if needs_restart:
+        with pytest.raises(RuntimeError, match='restart_node'):
+            rp.begin()
+    else:
+        assert rp.begin()['needed'] is False
+    rp._run.assert_not_called()
+    assert not rp._marker().exists()
+
+
 def test_restoration_dry_run_does_not_start_service(rp):
     rp.initialized = lambda: True
     start = Mock()

@@ -51,8 +51,12 @@ redpanda-systemd-bootstrap:
     - require:
       - module: redpanda-package-version
 {% if rp.enable_tls %}
-{% for filename in ['truststore.pem', 'node.crt', 'node.key'] %}
+{% for filename, source in [('truststore.pem', rp.tls.ca_source), ('node.crt', rp.tls.cert_source), ('node.key', rp.tls.key_source)] %}
 redpanda-cert-{{ filename }}:
+{% if source == rp.paths.cert_directory + '/' + filename %}
+  file.exists:
+    - name: {{ source | tojson }}
+{% else %}
   file.managed:
     - name: {{ (rp.paths.cert_directory + '/' + filename) | tojson }}
     - source: {{ (rp.paths.work + '/' + filename) | tojson }}
@@ -63,5 +67,6 @@ redpanda-cert-{{ filename }}:
     - show_changes: false
     - require:
       - file: redpanda-config-directory
+{% endif %}
 {% endfor %}
 {% endif %}

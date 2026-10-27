@@ -18,6 +18,7 @@ redpanda-stage-cluster:
       - file: redpanda-work-directory
 {% if rp.enable_tls %}
 {% for filename, source in [('truststore.pem', rp.tls.ca_source), ('node.crt', rp.tls.cert_source), ('node.key', rp.tls.key_source)] %}
+{% if source != rp.paths.cert_directory + '/' + filename %}
 redpanda-stage-{{ filename }}:
   file.managed:
     - name: {{ (rp.paths.work + '/' + filename) | tojson }}
@@ -29,6 +30,7 @@ redpanda-stage-{{ filename }}:
     - show_changes: false
     - require:
       - file: redpanda-work-directory
+{% endif %}
 {% endfor %}
 {% endif %}
 

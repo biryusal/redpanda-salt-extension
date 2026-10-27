@@ -8,6 +8,7 @@
 - Removed managed cluster properties reset to default; unmanaged ones remain. All brokers must acknowledge the config version.
 - restart_node=false rejects changes needing restart. Select internal_kafka_listener when ambiguous.
 - Production: TLS + SASL. Secrets come through protected pillar, not node.rpk. Admin credentials are passed to rpk via environment. Bootstrap secrets are removed after startup; component credentials remain in broker config.
+- TLS file contents hot-reload without restart. For an external certificate agent, point TLS sources at the working cert_directory files (node.crt, node.key, truststore.pem); Salt checks existence without copying or changing permissions. TLS configuration/path changes still use rolling restart.
 - With SASL, Admin API auth defaults on; Proxy/Schema Registry default to http_basic/private bind. Explicitly preserve old behavior before separate auth/TLS migration.
 
 **Storage:** explicit devices/UUID/mountpoint, with data inside that mount. For one device, resolve=true reads XFS UUID on the minion and preserves live paths/symlinks. initialize=true permits unused-device XFS creation; foreign signatures, partitions and UUID conflicts fail. Device ancestry is checked before mutation. Mount persists UUID in fstab. RAID uses explicit configuration.

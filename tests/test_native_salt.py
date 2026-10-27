@@ -4,7 +4,7 @@ from functional_helpers import make_loaders
 import salt.state
 
 
-SCENARIOS = [(family, old, security, 'core') for family in ('Debian', 'RedHat') for old in (False, True) for security in (False, True)] + [('Debian', False, False, lane) for lane in ('storage', 'airgap', 'nightly', 'orchestration', 'users', 'orch_users')] + [('RedHat', False, False, 'fips')]
+SCENARIOS = [(family, old, security, 'core') for family in ('Debian', 'RedHat') for old in (False, True) for security in (False, True)] + [('Debian', False, False, lane) for lane in ('storage', 'airgap', 'nightly', 'orchestration', 'users', 'orch_users')] + [('RedHat', False, False, 'fips'), ('Debian', True, False, 'external_tls')]
 
 
 @pytest.mark.parametrize('family,old,security,lane', SCENARIOS)
@@ -15,6 +15,12 @@ def test_native_loader_and_highstate(tmp_path, family, old, security, lane, requ
     pillar = {'version': '25.3.1', 'data_directory': str(data), 'nodes': {'broker-1': {'private_ip': '10.0.0.1'}, 'broker-2': {'private_ip': '10.0.0.2'}}}
     if security:
         pillar.update(enable_tls=True, tls={'ca_source': 'salt://private/ca', 'cert_source': 'salt://private/cert', 'key_source': 'salt://private/key'}, kafka_enable_authorization=True, sasl={'password': 'secret'})
+    if lane == 'external_tls':
+        pillar.update(enable_tls=True, tls={
+            'ca_source': '/etc/redpanda/certs/truststore.pem',
+            'cert_source': '/etc/redpanda/certs/node.crt',
+            'key_source': '/etc/redpanda/certs/node.key',
+        })
     if lane == 'storage':
         pillar.update(data_directory=str(tmp_path / 'mount/data'), storage={'devices': ['/dev/disk/by-id/data1', '/dev/disk/by-id/data2'], 'mountpoint': str(tmp_path / 'mount'), 'uuid': '6cde2bd7-8592-413b-940d-289c95784e62', 'format': True})
     if lane == 'airgap':
@@ -61,5 +67,11 @@ def test_native_loader_and_highstate(tmp_path, family, old, security, lane, requ
                 native = next(c for c in chunks if c['__id__'] == state_id)
                 assert (native['state'], native['fun'], native['name']) == ('module', 'run', function)
                 assert native['onlyif'] == package['onlyif']
+            if lane == 'external_tls':
+                for filename in ('truststore.pem', 'node.crt', 'node.key'):
+                    assert 'redpanda-stage-' + filename not in ids
+                    certificate = next(c for c in chunks if c['__id__'] == 'redpanda-cert-' + filename)
+                    assert (certificate['state'], certificate['fun']) == ('file', 'exists')
+                    assert 'source' not in certificate and 'mode' not in certificate
             if lane == 'storage':
                 assert ids.index('redpanda-storage-devices') < ids.index('redpanda-raid') < ids.index('redpanda-xfs') < ids.index('redpanda-data-mount')

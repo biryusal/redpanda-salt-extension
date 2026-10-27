@@ -34,17 +34,7 @@ def plan(ctx):
     changed |= journal.file_changed(
         ctx, ctx.path('work') + '/systemd.conf', ctx.path('systemd_dropin')
     )
-    if c['enable_tls']:
-        changed |= any(
-            (
-                journal.file_changed(
-                    ctx,
-                    ctx.path('work') + '/' + f,
-                    ctx.path('cert_directory') + '/' + f,
-                )
-                for f in ('node.crt', 'node.key', 'truststore.pem')
-            )
-        )
+    # Redpanda watches TLS files; changing their contents needs no restart.
     if (
         c['enable_fips']
         and ctx.run(['/usr/bin/fips-mode-setup', '--check'])
